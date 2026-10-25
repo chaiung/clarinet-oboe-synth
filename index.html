@@ -30,7 +30,7 @@
             單簧管與雙簧管頻譜分析與諧波合成器
         </h1>
         <p class="text-slate-600 mt-2 text-sm sm:text-base">
-            同音高 (E3, 164.81Hz) 下探索單簧管（奇數諧波）與雙簧管（全諧波豐富）的獨特音色與頻譜差異！
+            同音高 (A3, 220Hz) 下探索單簧管（奇數諧波）與雙簧管（全諧波豐富）的獨特音色與頻譜差異！
         </p>
     </header>
 
@@ -44,7 +44,7 @@
                     <h2 class="text-xl font-bold flex items-center gap-2 text-teal-700">
                         <i class="fa-solid fa-wave-square"></i> 1. 管樂器聲音模擬與頻譜
                     </h2>
-                    <span id="instrument-freq-badge" class="text-xs px-2.5 py-1 bg-teal-100 text-teal-700 rounded-full font-medium">單簧管 (E3, 164.81 Hz)</span>
+                    <span id="instrument-freq-badge" class="text-xs px-2.5 py-1 bg-teal-100 text-teal-700 rounded-full font-medium">單簧管 (A3, 220.00 Hz)</span>
                 </div>
                 <p class="text-sm text-slate-600 mb-4">
                     單簧管（圓柱管閉管，富含奇數諧波）；雙簧管（圓錐管開管，具備完整且密集的偶數/奇數全諧波）。<b>請點擊或按住發出聲音：</b>
@@ -56,13 +56,13 @@
                             onmousedown="startInstrument('clarinet')" onmouseup="stopInstrument()" onmouseleave="stopInstrument()"
                             ontouchstart="startInstrument('clarinet'); event.preventDefault();" ontouchend="stopInstrument()"
                             class="flex items-center justify-center gap-2 py-3 px-4 bg-teal-600 hover:bg-teal-500 active:scale-95 transition-all rounded-xl font-semibold text-sm text-white shadow-md shadow-teal-200 cursor-pointer select-none">
-                        <i class="fa-solid fa-music"></i> 單簧管 (E3, 164.81Hz)
+                        <i class="fa-solid fa-music"></i> 單簧管 (A3, 220Hz)
                     </button>
                     <button id="btn-oboe" 
                             onmousedown="startInstrument('oboe')" onmouseup="stopInstrument()" onmouseleave="stopInstrument()"
                             ontouchstart="startInstrument('oboe'); event.preventDefault();" ontouchend="stopInstrument()"
                             class="flex items-center justify-center gap-2 py-3 px-4 bg-amber-600 hover:bg-amber-500 active:scale-95 transition-all rounded-xl font-semibold text-sm text-white shadow-md shadow-amber-200 cursor-pointer select-none">
-                        <i class="fa-solid fa-wind"></i> 雙簧管 (E3, 164.81Hz)
+                        <i class="fa-solid fa-wind"></i> 雙簧管 (A3, 220Hz)
                     </button>
                 </div>
 
@@ -121,8 +121,8 @@
 
                 <!-- 基礎頻率設定 -->
                 <div class="mb-3 flex items-center gap-4 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    <label class="text-xs font-semibold text-slate-700 whitespace-nowrap">基頻: <span id="base-freq-val" class="text-cyan-600 font-bold">164.81</span> Hz</label>
-                    <input type="range" id="baseFreqInput" min="60" max="600" step="0.1" value="164.81" oninput="updateBaseFreq(this.value)" class="w-full accent-cyan-600 cursor-pointer">
+                    <label class="text-xs font-semibold text-slate-700 whitespace-nowrap">基頻: <span id="base-freq-val" class="text-cyan-600 font-bold">220.00</span> Hz</label>
+                    <input type="range" id="baseFreqInput" min="60" max="600" step="0.1" value="220" oninput="updateBaseFreq(this.value)" class="w-full accent-cyan-600 cursor-pointer">
                 </div>
 
                 <!-- 諧波拉桿群組 (1 到 6 諧波) -->
@@ -162,14 +162,14 @@
         let synthGainNode = null;
         let isSynthActive = false;
 
-        let baseFrequency = 164.81; // 預設 E3
+        let baseFrequency = 220.0; // 預設 A3
         let harmonicAmplitudes = [1.0, 0.1, 0.75, 0.05, 0.5, 0.05]; // 預設單簧管（奇數諧波）
 
         window.onload = function() {
             initHarmonicControls();
             resizeCanvases();
             window.addEventListener('resize', resizeCanvases);
-            drawSpectrumAndWaveform(harmonicAmplitudes, 164.81, '單簧管 (E3)');
+            drawSpectrumAndWaveform(harmonicAmplitudes, 220.0, '單簧管 (A3)');
             drawCompositeSynthWaveform();
         };
 
@@ -231,20 +231,20 @@
         function loadPreset(type) {
             if (type === 'clarinet') {
                 // 單簧管：奇數諧波顯著 (1, 3, 5 較強)
-                baseFrequency = 164.81;
+                baseFrequency = 220.0;
                 harmonicAmplitudes = [1.0, 0.1, 0.75, 0.05, 0.5, 0.05];
                 document.getElementById('baseFreqInput').value = baseFrequency;
                 document.getElementById('base-freq-val').textContent = baseFrequency.toFixed(2);
-                showToast('已載入單簧管預設（E3, 164.81Hz 奇數諧波）');
-                drawSpectrumAndWaveform(harmonicAmplitudes, baseFrequency, '單簧管 (E3)');
+                showToast('已載入單簧管預設（A3, 220Hz 奇數諧波）');
+                drawSpectrumAndWaveform(harmonicAmplitudes, baseFrequency, '單簧管 (A3)');
             } else if (type === 'oboe') {
                 // 雙簧管：完整且密集的諧波（偶數與奇數皆強，呈自然衰減）
-                baseFrequency = 164.81;
+                baseFrequency = 220.0;
                 harmonicAmplitudes = [1.0, 0.85, 0.65, 0.5, 0.35, 0.25];
                 document.getElementById('baseFreqInput').value = baseFrequency;
                 document.getElementById('base-freq-val').textContent = baseFrequency.toFixed(2);
-                showToast('已載入雙簧管預設（E3, 164.81Hz 全諧波富麗音色）');
-                drawSpectrumAndWaveform(harmonicAmplitudes, baseFrequency, '雙簧管 (E3)');
+                showToast('已載入雙簧管預設（A3, 220Hz 全諧波富麗音色）');
+                drawSpectrumAndWaveform(harmonicAmplitudes, baseFrequency, '雙簧管 (A3)');
             }
             initHarmonicControls();
             if (isSynthActive) updateSynthPeriodicWave();
@@ -256,20 +256,20 @@
             const ctx = getAudioContext();
             if (activeOscillator) return;
 
-            let freq = 164.81;
+            let freq = 220.0;
             let profile = [1.0, 0.1, 0.75, 0.05, 0.5, 0.05];
-            let nameStr = '單簧管 (E3, 164.81 Hz)';
+            let nameStr = '單簧管 (A3, 220 Hz)';
 
             if (type === 'clarinet') {
-                freq = 164.81;
+                freq = 220.0;
                 profile = [1.0, 0.1, 0.75, 0.05, 0.5, 0.05];
-                nameStr = '單簧管 (E3, 164.81 Hz)';
-                document.getElementById('instrument-freq-badge').textContent = '單簧管 (E3, 164.81 Hz)';
+                nameStr = '單簧管 (A3, 220 Hz)';
+                document.getElementById('instrument-freq-badge').textContent = '單簧管 (A3, 220 Hz)';
             } else {
-                freq = 164.81;
+                freq = 220.0;
                 profile = [1.0, 0.85, 0.65, 0.5, 0.35, 0.25]; // 雙簧管全諧波特色
-                nameStr = '雙簧管 (E3, 164.81 Hz)';
-                document.getElementById('instrument-freq-badge').textContent = '雙簧管 (E3, 164.81 Hz)';
+                nameStr = '雙簧管 (A3, 220 Hz)';
+                document.getElementById('instrument-freq-badge').textContent = '雙簧管 (A3, 220 Hz)';
             }
 
             document.getElementById('status-text').textContent = `正在發聲：${nameStr} (持續長音中...)`;
@@ -382,7 +382,7 @@
 
         function resetSynth() {
             harmonicAmplitudes = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-            baseFrequency = 164.81;
+            baseFrequency = 220.0;
             document.getElementById('baseFreqInput').value = baseFrequency;
             document.getElementById('base-freq-val').textContent = baseFrequency.toFixed(2);
             initHarmonicControls();
@@ -404,7 +404,7 @@
             synthCanvas.width = synthCanvas.parentElement.clientWidth;
             synthCanvas.height = synthCanvas.parentElement.clientHeight;
 
-            drawSpectrumAndWaveform([1.0, 0.1, 0.75, 0.05, 0.5, 0.05], 164.81, '單簧管 (E3)');
+            drawSpectrumAndWaveform([1.0, 0.1, 0.75, 0.05, 0.5, 0.05], 220.0, '單簧管 (A3)');
             drawCompositeSynthWaveform();
         }
 
@@ -470,7 +470,6 @@
                     let harmonic = idx + 1;
                     yVal += amp * Math.sin(2 * Math.PI * baseFreq * harmonic * t);
                 });
-                // 使用與右側合成器一致的標準化基底 (總振幅和)
                 const totalAmp = amplitudes.reduce((a, b) => a + Math.abs(b), 0) || 1;
                 let normalizedY = (wHeight / 2) - (yVal / totalAmp) * (wHeight / 2.5);
 
@@ -481,7 +480,7 @@
             wCtx.stroke();
         }
 
-        // 4. 即時複合波形疊加效果（採用與左側時域波形完全一致的縮放與呈現標準）
+        // 4. 即時複合波形疊加效果
         function drawCompositeSynthWaveform() {
             const canvas = document.getElementById('synthCompositeCanvas');
             const ctx = canvas.getContext('2d');
@@ -501,7 +500,7 @@
 
             const points = 250;
             const sliceWidth = width / points;
-            const timeSpan = 2 / baseFrequency; // 與左側波形保持一致的時間週期區間 (2個週期)
+            const timeSpan = 2 / baseFrequency;
 
             let compositeWave = new Array(points + 1).fill(0);
             let harmonicWaves = [];
@@ -519,7 +518,6 @@
                 harmonicWaves.push({ harmonic: hNum, wave: hWave, amp: amp });
             });
 
-            // 與左側時域波形一致的正規化標準 (總絕對振幅和)
             const totalAmp = harmonicAmplitudes.reduce((a, b) => a + Math.abs(b), 0) || 1;
 
             harmonicWaves.forEach((hw, index) => {
