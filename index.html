@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>單簧管與雙簧管頻譜分析與諧波合成器</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- 引入 FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .slider-thumb::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #0d9488;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col items-center p-4 sm:p-6">
+
+    <!-- 頁面標題 -->
+    <header class="w-full max-w-5xl mb-6 text-center">
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-teal-700">
+            單簧管與雙簧管頻譜分析與諧波合成器
+        </h1>
+        <p class="text-slate-600 mt-2 text-sm sm:text-base">
+            同音高 (E3, 164.81Hz) 下探索單簧管（奇數諧波）與雙簧管（全諧波豐富）的獨特音色與頻譜差異！
+        </p>
+    </header>
+
+    <!-- 主要內容區塊 -->
+    <main class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- 第一部分：模擬與頻譜分析 -->
+        <section class="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold flex items-center gap-2 text-teal-700">
+                        <i class="fa-solid fa-wave-square"></i> 1. 管樂器聲音模擬與頻譜
+                    </h2>
+                    <span id="instrument-freq-badge" class="text-xs px-2.5 py-1 bg-teal-100 text-teal-700 rounded-full font-medium">單簧管 (E3, 164.81 Hz)</span>
+                </div>
+                <p class="text-sm text-slate-600 mb-4">
+                    單簧管（圓柱管閉管，富含奇數諧波）；雙簧管（圓錐管開管，具備完整且密集的偶數/奇數全諧波）。<b>請點擊或按住發出聲音：</b>
+                </p>
+
+                <!-- 互動按鈕：點擊或按住發聲 (支援 mouse & touch) -->
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <button id="btn-clarinet" 
+                            onmousedown="startInstrument('clarinet')" onmouseup="stopInstrument()" onmouseleave="stopInstrument()"
+                            ontouchstart="startInstrument('clarinet'); event.preventDefault();" ontouchend="stopInstrument()"
+                            class="flex items-center justify-center gap-2 py-3 px-4 bg-teal-600 hover:bg-teal-500 active:scale-95 transition-all rounded-xl font-semibold text-sm text-white shadow-md shadow-teal-200 cursor-pointer select-none">
+                        <i class="fa-solid fa-music"></i> 單簧管 (E3, 164.81Hz)
+                    </button>
+                    <button id="btn-oboe" 
+                            onmousedown="startInstrument('oboe')" onmouseup="stopInstrument()" onmouseleave="stopInstrument()"
+                            ontouchstart="startInstrument('oboe'); event.preventDefault();" ontouchend="stopInstrument()"
+                            class="flex items-center justify-center gap-2 py-3 px-4 bg-amber-600 hover:bg-amber-500 active:scale-95 transition-all rounded-xl font-semibold text-sm text-white shadow-md shadow-amber-200 cursor-pointer select-none">
+                        <i class="fa-solid fa-wind"></i> 雙簧管 (E3, 164.81Hz)
+                    </button>
+                </div>
+
+                <!-- 狀態顯示 -->
+                <div id="status-text" class="text-xs text-center text-slate-500 mb-3 h-5 font-medium">
+                    點擊上方按鈕以持續發聲並觀察頻譜
+                </div>
+
+                <!-- 頻譜 Canvas (頻率 vs 強度) -->
+                <div class="mb-3">
+                    <div class="flex justify-between text-xs text-slate-500 mb-1 font-medium">
+                        <span>頻譜分析圖 (強度 / Amplitude)</span>
+                        <span class="text-teal-600">頻率 (Hz)</span>
+                    </div>
+                    <div class="relative w-full h-36 bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+                        <canvas id="spectrumCanvas" class="w-full h-full block"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 時域波形 Canvas -->
+            <div>
+                <div class="text-xs text-slate-500 mb-1 font-medium">時域波形圖 (Waveform)</div>
+                <div class="relative w-full h-24 bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+                    <canvas id="waveformCanvas" class="w-full h-full block"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第二部分：諧波合成器 -->
+        <section class="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold flex items-center gap-2 text-cyan-700">
+                        <i class="fa-solid fa-sliders"></i> 2. 諧波合成與複合波疊加
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="loadPreset('clarinet')" class="text-xs px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-medium transition">載入單簧管</button>
+                        <button onclick="loadPreset('oboe')" class="text-xs px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-medium transition">載入雙簧管</button>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-600 mb-3">
+                    下方即時呈現各諧波分量及其疊加合成後的最終波形（與左側時域波形採相同縮放標準）：
+                </p>
+
+                <!-- 即時複合波形疊加 Canvas -->
+                <div class="mb-4">
+                    <div class="text-xs text-slate-500 mb-1 font-medium flex justify-between">
+                        <span>複合波形疊加即時預覽</span>
+                        <span class="text-cyan-600">各諧波加總 (Composite Wave)</span>
+                    </div>
+                    <div class="relative w-full h-28 bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+                        <canvas id="synthCompositeCanvas" class="w-full h-full block"></canvas>
+                    </div>
+                </div>
+
+                <!-- 基礎頻率設定 -->
+                <div class="mb-3 flex items-center gap-4 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <label class="text-xs font-semibold text-slate-700 whitespace-nowrap">基頻: <span id="base-freq-val" class="text-cyan-600 font-bold">164.81</span> Hz</label>
+                    <input type="range" id="baseFreqInput" min="60" max="600" step="0.1" value="164.81" oninput="updateBaseFreq(this.value)" class="w-full accent-cyan-600 cursor-pointer">
+                </div>
+
+                <!-- 諧波拉桿群組 (1 到 6 諧波) -->
+                <div class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                    <div id="harmonic-controls" class="space-y-1.5"></div>
+                </div>
+            </div>
+
+            <!-- 合成器控制按鈕 -->
+            <div class="mt-4 pt-3 border-t border-slate-200 flex gap-3">
+                <button id="btn-synth-play" 
+                        onmousedown="startSynth()" onmouseup="stopSynth()" onmouseleave="stopSynth()"
+                        ontouchstart="startSynth(); event.preventDefault();" ontouchend="stopSynth()"
+                        class="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-cyan-600 hover:bg-cyan-500 active:scale-95 transition-all rounded-xl font-semibold text-sm text-white shadow-md shadow-cyan-200 cursor-pointer select-none">
+                    <i class="fa-solid fa-play" id="synth-icon"></i> <span id="synth-btn-text">按住發出合成聲音</span>
+                </button>
+                <button onclick="resetSynth()" class="px-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-semibold text-sm transition">
+                    重設
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 訊息提示框 -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-700 text-white px-4 py-2 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-all duration-300 text-sm z-50">
+        提示訊息
+    </div>
+
+    <!-- JavaScript 邏輯 -->
+    <script>
+        let audioCtx = null;
+        let activeOscillator = null;
+        let activeGainNode = null;
+
+        let synthOscillator = null;
+        let synthGainNode = null;
+        let isSynthActive = false;
+
+        let baseFrequency = 164.81; // 預設 E3
+        let harmonicAmplitudes = [1.0, 0.1, 0.75, 0.05, 0.5, 0.05]; // 預設單簧管（奇數諧波）
+
+        window.onload = function() {
+            initHarmonicControls();
+            resizeCanvases();
+            window.addEventListener('resize', resizeCanvases);
+            drawSpectrumAndWaveform(harmonicAmplitudes, 164.81, '單簧管 (E3)');
+            drawCompositeSynthWaveform();
+        };
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+        }
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function initHarmonicControls() {
+            const container = document.getElementById('harmonic-controls');
+            container.innerHTML = '';
+            for (let i = 0; i < harmonicAmplitudes.length; i++) {
+                const harmonicNum = i + 1;
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200';
+                div.innerHTML = `
+                    <span class="text-xs font-mono text-slate-600 w-16 font-medium">第 ${harmonicNum} 諧波</span>
+                    <input type="range" min="0" max="1" step="0.01" value="${harmonicAmplitudes[i]}" 
+                           oninput="updateHarmonic(${i}, this.value)" 
+                           class="w-full accent-cyan-600 slider-thumb cursor-pointer">
+                    <span id="h-val-${i}" class="text-xs font-mono text-cyan-700 w-10 text-right font-bold">${harmonicAmplitudes[i].toFixed(2)}</span>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function updateHarmonic(index, value) {
+            harmonicAmplitudes[index] = parseFloat(value);
+            document.getElementById(`h-val-${index}`).textContent = parseFloat(value).toFixed(2);
+            
+            if (isSynthActive && synthOscillator) {
+                updateSynthPeriodicWave();
+            }
+            drawCompositeSynthWaveform();
+        }
+
+        function updateBaseFreq(val) {
+            baseFrequency = parseFloat(val);
+            document.getElementById('base-freq-val').textContent = baseFrequency.toFixed(2);
+            if (isSynthActive && synthOscillator) {
+                synthOscillator.frequency.setValueAtTime(baseFrequency, audioCtx.currentTime);
+            }
+            drawCompositeSynthWaveform();
+        }
+
+        function loadPreset(type) {
+            if (type === 'clarinet') {
+                // 單簧管：奇數諧波顯著 (1, 3, 5 較強)
+                baseFrequency = 164.81;
+                harmonicAmplitudes = [1.0, 0.1, 0.75, 0.05, 0.5, 0.05];
+                document.getElementById('baseFreqInput').value = baseFrequency;
+                document.getElementById('base-freq-val').textContent = baseFrequency.toFixed(2);
+                showToast('已載入單簧管預設（E3, 164.81Hz 奇數諧波）');
+                drawSpectrumAndWaveform(harmonicAmplitudes, baseFrequency, '單簧管 (E3)');
+            } else if (type === 'oboe') {
+                // 雙簧管：完整且密集的諧波（偶數與奇數皆強，呈自然衰減）
+                baseFrequency = 164.81;
+                harmonicAmplitudes = [1.0, 0.85, 0.65, 0.5, 0.35, 0.25];
+                document.getElementById('baseFreqInput').value = baseFrequency;
+                document.getElementById('base-freq-val').textContent = baseFrequency.toFixed(2);
+                showToast('已載入雙簧管預設（E3, 164.81Hz 全諧波富麗音色）');
+                drawSpectrumAndWaveform(harmonicAmplitudes, baseFrequency, '雙簧管 (E3)');
+            }
+            initHarmonicControls();
+            if (isSynthActive) updateSynthPeriodicWave();
+            drawCompositeSynthWaveform();
+        }
+
+        // 1. 模擬樂器發聲（按住長音）
+        function startInstrument(type) {
+            const ctx = getAudioContext();
+            if (activeOscillator) return;
+
+            let freq = 164.81;
+            let profile = [1.0, 0.1, 0.75, 0.05, 0.5, 0.05];
+            let nameStr = '單簧管 (E3, 164.81 Hz)';
+
+            if (type === 'clarinet') {
+                freq = 164.81;
+                profile = [1.0, 0.1, 0.75, 0.05, 0.5, 0.05];
+                nameStr = '單簧管 (E3, 164.81 Hz)';
+                document.getElementById('instrument-freq-badge').textContent = '單簧管 (E3, 164.81 Hz)';
+            } else {
+                freq = 164.81;
+                profile = [1.0, 0.85, 0.65, 0.5, 0.35, 0.25]; // 雙簧管全諧波特色
+                nameStr = '雙簧管 (E3, 164.81 Hz)';
+                document.getElementById('instrument-freq-badge').textContent = '雙簧管 (E3, 164.81 Hz)';
+            }
+
+            document.getElementById('status-text').textContent = `正在發聲：${nameStr} (持續長音中...)`;
+
+            const real = new Float32Array(profile.length + 1);
+            const imag = new Float32Array(profile.length + 1);
+            for (let i = 0; i < profile.length; i++) {
+                imag[i + 1] = profile[i];
+            }
+
+            const wave = ctx.createPeriodicWave(real, imag);
+            activeOscillator = ctx.createOscillator();
+            activeGainNode = ctx.createGain();
+
+            activeOscillator.setPeriodicWave(wave);
+            activeOscillator.frequency.setValueAtTime(freq, ctx.currentTime);
+
+            const now = ctx.currentTime;
+            activeGainNode.gain.setValueAtTime(0, now);
+            activeGainNode.gain.linearRampToValueAtTime(0.25, now + 0.08);
+
+            activeOscillator.connect(activeGainNode);
+            activeGainNode.connect(ctx.destination);
+            activeOscillator.start(now);
+
+            drawSpectrumAndWaveform(profile, freq, nameStr);
+        }
+
+        function stopInstrument() {
+            if (!activeOscillator || !activeGainNode) return;
+            const ctx = audioCtx;
+            if (!ctx) return;
+            const now = ctx.currentTime;
+
+            activeGainNode.gain.setValueAtTime(activeGainNode.gain.value, now);
+            activeGainNode.gain.linearRampToValueAtTime(0.0001, now + 0.15);
+
+            setTimeout(() => {
+                if (activeOscillator) {
+                    try { activeOscillator.stop(); } catch(e){}
+                    try { activeOscillator.disconnect(); } catch(e){}
+                    activeOscillator = null;
+                    activeGainNode = null;
+                }
+            }, 160);
+
+            document.getElementById('status-text').textContent = '放開按鈕，發聲停止';
+        }
+
+        // 2. 合成器發聲（按住長音）
+        function startSynth() {
+            const ctx = getAudioContext();
+            if (isSynthActive) return;
+
+            synthOscillator = ctx.createOscillator();
+            synthGainNode = ctx.createGain();
+
+            updateSynthPeriodicWave();
+            synthOscillator.frequency.setValueAtTime(baseFrequency, ctx.currentTime);
+
+            const now = ctx.currentTime;
+            synthGainNode.gain.setValueAtTime(0, now);
+            synthGainNode.gain.linearRampToValueAtTime(0.25, now + 0.08);
+
+            synthOscillator.connect(synthGainNode);
+            synthGainNode.connect(ctx.destination);
+            synthOscillator.start(now);
+            isSynthActive = true;
+
+            document.getElementById('synth-btn-text').textContent = '合成聲音發聲中...';
+            document.getElementById('synth-icon').className = 'fa-solid fa-volume-high animate-pulse';
+            showToast('合成聲音播放中');
+        }
+
+        function stopSynth() {
+            if (!isSynthActive || !synthOscillator) return;
+            const ctx = audioCtx;
+            if (!ctx) return;
+            const now = ctx.currentTime;
+
+            synthGainNode.gain.setValueAtTime(synthGainNode.gain.value, now);
+            synthGainNode.gain.linearRampToValueAtTime(0.0001, now + 0.15);
+
+            setTimeout(() => {
+                if (synthOscillator) {
+                    try { synthOscillator.stop(); } catch(e){}
+                    try { synthOscillator.disconnect(); } catch(e){}
+                    synthOscillator = null;
+                    synthGainNode = null;
+                }
+            }, 160);
+
+            isSynthActive = false;
+            document.getElementById('synth-btn-text').textContent = '按住發出合成聲音';
+            document.getElementById('synth-icon').className = 'fa-solid fa-play';
+        }
+
+        function updateSynthPeriodicWave() {
+            if (!audioCtx) return;
+            const real = new Float32Array(harmonicAmplitudes.length + 1);
+            const imag = new Float32Array(harmonicAmplitudes.length + 1);
+            for (let i = 0; i < harmonicAmplitudes.length; i++) {
+                imag[i + 1] = harmonicAmplitudes[i];
+            }
+            const wave = audioCtx.createPeriodicWave(real, imag);
+            if (synthOscillator) {
+                synthOscillator.setPeriodicWave(wave);
+            }
+        }
+
+        function resetSynth() {
+            harmonicAmplitudes = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+            baseFrequency = 164.81;
+            document.getElementById('baseFreqInput').value = baseFrequency;
+            document.getElementById('base-freq-val').textContent = baseFrequency.toFixed(2);
+            initHarmonicControls();
+            if (isSynthActive) updateSynthPeriodicWave();
+            drawCompositeSynthWaveform();
+            showToast('已重設合成器參數');
+        }
+
+        function resizeCanvases() {
+            const specCanvas = document.getElementById('spectrumCanvas');
+            specCanvas.width = specCanvas.parentElement.clientWidth;
+            specCanvas.height = specCanvas.parentElement.clientHeight;
+
+            const waveCanvas = document.getElementById('waveformCanvas');
+            waveCanvas.width = waveCanvas.parentElement.clientWidth;
+            waveCanvas.height = waveCanvas.parentElement.clientHeight;
+
+            const synthCanvas = document.getElementById('synthCompositeCanvas');
+            synthCanvas.width = synthCanvas.parentElement.clientWidth;
+            synthCanvas.height = synthCanvas.parentElement.clientHeight;
+
+            drawSpectrumAndWaveform([1.0, 0.1, 0.75, 0.05, 0.5, 0.05], 164.81, '單簧管 (E3)');
+            drawCompositeSynthWaveform();
+        }
+
+        // 3. 繪製頻譜分析圖與波形圖
+        function drawSpectrumAndWaveform(amplitudes, baseFreq, title) {
+            const specCanvas = document.getElementById('spectrumCanvas');
+            const sCtx = specCanvas.getContext('2d');
+            const sWidth = specCanvas.width;
+            const sHeight = specCanvas.height;
+
+            sCtx.clearRect(0, 0, sWidth, sHeight);
+
+            sCtx.strokeStyle = '#e2e8f0';
+            sCtx.lineWidth = 1;
+            for (let i = 1; i <= 3; i++) {
+                let y = (sHeight / 4) * i;
+                sCtx.beginPath(); sCtx.moveTo(0, y); sCtx.lineTo(sWidth, y); sCtx.stroke();
+            }
+
+            const barWidth = (sWidth / amplitudes.length) - 10;
+            const maxAmp = Math.max(...amplitudes, 1.0);
+
+            amplitudes.forEach((amp, i) => {
+                const x = i * (sWidth / amplitudes.length) + 8;
+                const barHeight = (amp / maxAmp) * (sHeight - 30);
+                const y = sHeight - barHeight - 18;
+
+                const grad = sCtx.createLinearGradient(0, y, 0, sHeight - 18);
+                grad.addColorStop(0, '#0d9488');
+                grad.addColorStop(1, '#06b6d4');
+
+                sCtx.fillStyle = grad;
+                sCtx.fillRect(x, y, barWidth, barHeight);
+
+                sCtx.fillStyle = '#64748b';
+                sCtx.font = '10px Inter, sans-serif';
+                sCtx.textAlign = 'center';
+                const freqVal = (baseFreq * (i + 1)).toFixed(1);
+                sCtx.fillText(`${freqVal}Hz`, x + barWidth / 2, sHeight - 5);
+
+                if (amp > 0.03) {
+                    sCtx.fillStyle = '#334155';
+                    sCtx.fillText(amp.toFixed(2), x + barWidth / 2, y - 4);
+                }
+            });
+
+            const waveCanvas = document.getElementById('waveformCanvas');
+            const wCtx = waveCanvas.getContext('2d');
+            const wWidth = waveCanvas.width;
+            const wHeight = waveCanvas.height;
+
+            wCtx.clearRect(0, 0, wWidth, wHeight);
+            wCtx.strokeStyle = '#0891b2';
+            wCtx.lineWidth = 2;
+            wCtx.beginPath();
+
+            const sliceWidth = wWidth / 200;
+            let xPos = 0;
+            for (let i = 0; i <= 200; i++) {
+                let t = (i / 200) * (2 / baseFreq);
+                let yVal = 0;
+                amplitudes.forEach((amp, idx) => {
+                    let harmonic = idx + 1;
+                    yVal += amp * Math.sin(2 * Math.PI * baseFreq * harmonic * t);
+                });
+                // 使用與右側合成器一致的標準化基底 (總振幅和)
+                const totalAmp = amplitudes.reduce((a, b) => a + Math.abs(b), 0) || 1;
+                let normalizedY = (wHeight / 2) - (yVal / totalAmp) * (wHeight / 2.5);
+
+                if (i === 0) wCtx.moveTo(xPos, normalizedY);
+                else wCtx.lineTo(xPos, normalizedY);
+                xPos += sliceWidth;
+            }
+            wCtx.stroke();
+        }
+
+        // 4. 即時複合波形疊加效果（採用與左側時域波形完全一致的縮放與呈現標準）
+        function drawCompositeSynthWaveform() {
+            const canvas = document.getElementById('synthCompositeCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            const points = 250;
+            const sliceWidth = width / points;
+            const timeSpan = 2 / baseFrequency; // 與左側波形保持一致的時間週期區間 (2個週期)
+
+            let compositeWave = new Array(points + 1).fill(0);
+            let harmonicWaves = [];
+
+            harmonicAmplitudes.forEach((amp, idx) => {
+                if (amp <= 0.001) return;
+                let hNum = idx + 1;
+                let hWave = [];
+                for (let i = 0; i <= points; i++) {
+                    let t = (i / points) * timeSpan;
+                    let val = amp * Math.sin(2 * Math.PI * baseFrequency * hNum * t);
+                    hWave.push(val);
+                    compositeWave[i] += val;
+                }
+                harmonicWaves.push({ harmonic: hNum, wave: hWave, amp: amp });
+            });
+
+            // 與左側時域波形一致的正規化標準 (總絕對振幅和)
+            const totalAmp = harmonicAmplitudes.reduce((a, b) => a + Math.abs(b), 0) || 1;
+
+            harmonicWaves.forEach((hw, index) => {
+                ctx.strokeStyle = `hsla(${index * 55 + 180}, 70%, 50%, 0.25)`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                hw.wave.forEach((val, i) => {
+                    let x = i * sliceWidth;
+                    let y = (height / 2) - (val / totalAmp) * (height / 2.5);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            });
+
+            ctx.strokeStyle = '#0891b2';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            compositeWave.forEach((val, i) => {
+                let x = i * sliceWidth;
+                let y = (height / 2) - (val / totalAmp) * (height / 2.5);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+    </script>
+</body>
+</html>
